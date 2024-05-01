@@ -1,0 +1,84 @@
+import java.util.ArrayList;
+import java.util.List;
+
+public class User {
+    private String role;
+    private String username; // 鐢ㄦ埛鍚?
+    private String password; // 瀵嗙爜
+    private List<Car> cars; // 缁戝畾鐨勮溅杈嗕俊鎭?
+    private String status; // 璐﹀彿鐘舵€侊紝濡?姝ｅ父"銆?鍋滅敤"
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.cars = new ArrayList<>();
+    }
+
+    public User(String role, String username, String password, String status) {
+        this.role = role;
+        this.username = username;
+        this.password = password;
+        this.status = status;
+        this.cars = new ArrayList<>();
+    }
+
+    /**
+     * 缁戝畾杞﹁締鍒扮敤鎴疯处鎴枫€?
+     * @param car 瑕佺粦瀹氱殑杞﹁締瀵硅薄
+     */
+    public void bindCar(Car car) {
+        cars.add(car);
+        System.out.println("杞﹁締锛? + car.getCarID() + " 宸茬粦瀹氬埌鐢ㄦ埛锛? + username);
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    /**
+     * 绉婚櫎缁戝畾鐨勮溅杈嗐€?
+     * @param car 瑕佺Щ闄ょ殑杞﹁締瀵硅薄
+     */
+    public void unbindCar(Car car) {
+        if (cars.remove(car)) {
+            System.out.println("杞﹁締锛? + car.getCarID() + " 宸蹭粠鐢ㄦ埛锛? + username + " 瑙ｇ粦");
+        } else {
+            System.out.println("杞﹁締锛? + car.getCarID() + " 鏈粦瀹氬埌鐢ㄦ埛锛? + username);
+        }
+    }
+
+    // Getter鏂规硶
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public List<Car> getCars() {
+        return new ArrayList<>(cars); // 杩斿洖杞﹁締淇℃伅鐨勫壇鏈互淇濇寔灏佽鎬?
+    }
+
+    public void toggleStatus() {
+        if (status.equals("姝ｅ父")) {
+            status = "鍋滅敤";
+        } else {
+            status = "姝ｅ父";
+        }
+    }
+
+    public void setPassword(String newPassword) {
+        password = newPassword;
+    }
+}
