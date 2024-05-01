@@ -1,0 +1,59 @@
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class UserMainPanel extends Application {
+    private BorderPane root; // 类成员变量
+    private Button myParkingSpot = null; // 记录用户的车位
+    private Button selectedParkingSpot = null; // 记录选中的车位
+    private Label totalSpotsLabel;
+    private Label availableSpotsLabel;
+    private int totalSpots = 50; // 假设有50个车位，根据实际情况调整
+    private int availableSpots = 50; // 初始时，所有车位都是空闲的
+    private List<ParkingRecord> parkingRecords = new ArrayList<>();
+    private ParkingRecord currentRecord;
+    private String username; // 用于存储当前用户的用户名
+
+    public UserMainPanel() {
+    }
+    // 修改构造器来接收用户名
+    public UserMainPanel(String username) {
+        this.username = username;
+    }
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("用户主界面 - 停车管理系统");
+
+        root = new BorderPane();
+        // 创建顶部菜单
+        MenuBar menuBar = new MenuBar();
+        Menu viewMenu = new Menu("视图");
+        MenuItem viewParkingLot = new MenuItem("查看停车场");
+        MenuItem viewParkingRecords = new MenuItem("查看停车记录");
+        viewMenu.getItems().addAll(viewParkingLot, viewParkingRecords);
+
+        Menu accountMenu = new Menu("账户");
+        MenuItem personalInfo = new MenuItem("个人信息");
+        MenuItem logout = new MenuItem("登出");
+        accountMenu.getItems().addAll(personalInfo, logout);
+
+        menuBar.getMenus().addAll(viewMenu, accountMenu);
+        root.setTop(menuBar);
+
+        // 模拟停车场视图的占位符
