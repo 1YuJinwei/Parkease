@@ -1,0 +1,72 @@
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class UserTest {
+    User user;
+    Car car1;
+    Car car2;
+
+    @BeforeEach
+    void setUp() {
+        user = new User("user", "user123", "password123", "正常");
+        car1 = new Car("CAR001");
+        car2 = new Car("CAR002");
+
+        System.out.println("Setup for test completed.");
+    }
+
+    @Test
+    void testUserCreation() {
+        System.out.println("Testing user creation...");
+        assertEquals("user", user.getRole());
+        assertEquals("user123", user.getUsername());
+        assertEquals("password123", user.getPassword());
+        assertEquals("正常", user.getStatus());
+        assertTrue(user.getCars().isEmpty(), "Cars list should be empty upon creation.");
+    }
+
+    @Test
+    void testBindAndUnbindCar() {
+        System.out.println("Testing binding and unbinding cars...");
+        user.bindCar(car1);
+        assertEquals(1, user.getCars().size(), "Cars list should contain 1 car after binding.");
+        assertTrue(user.getCars().contains(car1), "Cars list should include the bound car.");
+
+        user.bindCar(car2);
+        assertEquals(2, user.getCars().size(), "Cars list should contain 2 cars after binding another.");
+        assertTrue(user.getCars().contains(car2), "Cars list should include the second bound car.");
+
+        user.unbindCar(car1);
+        assertEquals(1, user.getCars().size(), "Cars list should contain 1 car after unbinding one.");
+        assertFalse(user.getCars().contains(car1), "Cars list should not include the unbound car.");
+
+        user.unbindCar(car2);
+        assertTrue(user.getCars().isEmpty(), "Cars list should be empty after unbinding all cars.");
+    }
+
+    @Test
+    void testRoleAndStatus() {
+        System.out.println("Testing role and status setters and getters...");
+        user.setRole("admin");
+        assertEquals("admin", user.getRole(), "Role should be updated to admin.");
+
+        user.setStatus("停用");
+        assertEquals("停用", user.getStatus(), "Status should be updated to 停用.");
+    }
+
+    @Test
+    void testCarsListEncapsulation() {
+        System.out.println("Testing cars list encapsulation...");
+        user.bindCar(car1);
+        List<Car> cars = user.getCars();
+        cars.add(car2); // Try to modify the returned cars list
+
+        // Verify the original cars list inside user is not modified
+        assertEquals(1, user.getCars().size(), "Internal cars list should not be modifiable from outside.");
+        assertFalse(user.getCars().contains(car2), "Internal cars list should not include car2.");
+    }
+}
