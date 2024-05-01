@@ -1,0 +1,84 @@
+import java.util.ArrayList;
+import java.util.List;
+
+public class User {
+    private String role;
+    private String username; // 用户名
+    private String password; // 密码
+    private List<Car> cars; // 绑定的车辆信息
+    private String status; // 账号状态，如"正常"、"停用"
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+        this.cars = new ArrayList<>();
+    }
+
+    public User(String role, String username, String password, String status) {
+        this.role = role;
+        this.username = username;
+        this.password = password;
+        this.status = status;
+        this.cars = new ArrayList<>();
+    }
+
+    /**
+     * 绑定车辆到用户账户。
+     * @param car 要绑定的车辆对象
+     */
+    public void bindCar(Car car) {
+        cars.add(car);
+        System.out.println("车辆：" + car.getCarID() + " 已绑定到用户：" + username);
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+    /**
+     * 移除绑定的车辆。
+     * @param car 要移除的车辆对象
+     */
+    public void unbindCar(Car car) {
+        if (cars.remove(car)) {
+            System.out.println("车辆：" + car.getCarID() + " 已从用户：" + username + " 解绑");
+        } else {
+            System.out.println("车辆：" + car.getCarID() + " 未绑定到用户：" + username);
+        }
+    }
+
+    // Getter方法
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public List<Car> getCars() {
+        return new ArrayList<>(cars); // 返回车辆信息的副本以保持封装性
+    }
+
+    public void toggleStatus() {
+        if (status.equals("正常")) {
+            status = "停用";
+        } else {
+            status = "正常";
+        }
+    }
+
+    public void setPassword(String newPassword) {
+        password = newPassword;
+    }
+}
