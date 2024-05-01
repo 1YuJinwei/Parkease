@@ -1,0 +1,59 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class CSVManager {
+    private String filePath;
+
+    public CSVManager(String filePath) {
+        this.filePath = filePath;
+    }
+
+
+    /**
+     * 从CSV文件加载用户数据。
+     * @return 包含用户名作为键，角色和密码作为值的映射。
+     */
+    public Map<String, String[]> loadUserData() {
+        Map<String, String[]> userData = new HashMap<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] userDetails = line.split(",");
+                if (userDetails.length == 4) {
+                    // userDetails[0] = 角色, userDetails[1] = 用户名, userDetails[2] = 密码
+                    userData.put(userDetails[1], new String[]{userDetails[0], userDetails[2], userDetails[3]});
+                    userData.put(userDetails[1], new String[]{userDetails[0], userDetails[2], userDetails[3]});
+
+                    System.out.println(userDetails[1] + " " + userDetails[0] + " " + userDetails[2] + " " + userDetails[3]);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println("用户数量：" + userData.size());
+        return userData;
+    }
+
+    /**
+     * 验证用户登录。
+     * @param username 用户名
+     * @param password 密码
+     * @param role 角色
+     * @return 如果用户名、密码和角色匹配，则返回 true。
+     */
+    public boolean validateLogin(String username, String password, String role) {
+        Map<String, String[]> userData = loadUserData();
+        if (userData.containsKey(username)) {
+            String[] details = userData.get(username);
+  
+
