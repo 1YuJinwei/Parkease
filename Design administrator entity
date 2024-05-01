@@ -1,0 +1,73 @@
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+public class LoginFrame extends Application {
+
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("登录 - 停车管理系统");
+
+        VBox vbox = new VBox(10); // 用于放置登录表单的垂直布局盒子
+        vbox.setPadding(new Insets(20, 20, 20, 20)); // 设置内边距
+
+        // 角色选择下拉列表
+        ComboBox<String> roleComboBox = new ComboBox<>();
+        roleComboBox.getItems().addAll("用户", "管理员");
+        roleComboBox.setPromptText("选择角色");
+
+        // 用户名输入框
+        TextField usernameField = new TextField();
+        usernameField.setPromptText("用户名");
+
+        // 密码输入框
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("密码");
+
+        // 登录按钮
+        Button loginButton = new Button("登录");
+        loginButton.setStyle("-fx-background-color: blue; -fx-text-fill: white;");
+
+        vbox.getChildren().addAll(new Label("角色:"), roleComboBox,
+                new Label("用户名:"), usernameField,
+                new Label("密码:"), passwordField,
+                loginButton);
+        vbox.setAlignment(Pos.CENTER);
+
+        loginButton.setOnAction(e -> {
+            String username = usernameField.getText();
+            String password = passwordField.getText();
+            String role = roleComboBox.getValue();
+
+            CSVManager csvManager = new CSVManager("users.csv");
+            boolean isValidLogin = csvManager.validateLogin(username, password, role);
+
+            if (isValidLogin) {
+                primaryStage.hide(); // 隐藏登录窗口
+                // 根据角色打开相应的主界面
+                if ("管理员".equals(role)) {
+                    // 打开管理员主界面
+                    new AdminMainPanel().start(new Stage());
+                } else if ("用户".equals(role)) {
+                    // 打开用户主界面
+                    new UserMainPanel(username).start(new Stage());
+                }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "登录失败，密码错误或者账号被禁用");
+                alert.showAndWait();
+            }
+        });
+
+        Scene scene = new Scene(vbox, 350, 250);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
