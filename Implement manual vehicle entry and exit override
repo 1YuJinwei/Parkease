@@ -1,0 +1,356 @@
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+public class UserMainPanel extends Application {
+    private BorderPane root; // 类成员变量
+    private Button myParkingSpot = null; // 记录用户的车位
+    private Button selectedParkingSpot = null; // 记录选中的车位
+    private Label totalSpotsLabel;
+    private Label availableSpotsLabel;
+    private int totalSpots = 50; // 假设有50个车位，根据实际情况调整
+    private int availableSpots = 50; // 初始时，所有车位都是空闲的
+    private List<ParkingRecord> parkingRecords = new ArrayList<>();
+    private ParkingRecord currentRecord;
+    private String username; // 用于存储当前用户的用户名
+
+    private CSVManager activeParkingManager;
+    private CSVManager completedParkingManager;
+
+    public UserMainPanel() {
+    }
+    // 修改构造器来接收用户名
+    public UserMainPanel(String username) {
+        this.username = username;
+        this.activeParkingManager = new CSVManager("active_parkings.csv");  // Assumes file path for active parkings
+        this.completedParkingManager = new CSVManager("completed_parkings.csv");  // Assumes file path for completed parkings
+
+    }
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("用户主界面 - 停车管理系统");
+
+        root = new BorderPane();
+        // 创建顶部菜单
+        MenuBar menuBar = new MenuBar();
+        Menu viewMenu = new Menu("视图");
+        MenuItem viewParkingLot = new MenuItem("查看停车场");
+        MenuItem viewParkingRecords = new MenuItem("查看停车记录");
+        viewMenu.getItems().addAll(viewParkingLot, viewParkingRecords);
+
+        Menu accountMenu = new Menu("账户");
+        MenuItem personalInfo = new MenuItem("个人信息");
+        MenuItem logout = new MenuItem("登出");
+        accountMenu.getItems().addAll(personalInfo, logout);
+
+        menuBar.getMenus().addAll(viewMenu, accountMenu);
+        root.setTop(menuBar);
+
+        // 模拟停车场视图的占位符
+        VBox parkingLotPlaceholder = new VBox();
+        parkingLotPlaceholder.setPadding(new Insets(20));
+        parkingLotPlaceholder.getChildren().add(new Label("停车场视图占位符"));
+        root.setCenter(parkingLotPlaceholder);
+
+        // 为菜单项添加事件处理
+        viewParkingLot.setOnAction(e -> showParkingLotView());
+        viewParkingRecords.setOnAction(e -> showParkingRecords());
+        personalInfo.setOnAction(e -> showPersonalInfoView());
+        logout.setOnAction(e -> logoutAction());
+
+        Scene scene = new Scene(root, 800, 600);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+        // 构建操作按钮并放置在右侧
+        VBox buttonBox = createOperationButtons();
+        root.setRight(buttonBox);
+
+        VBox topContainer = new VBox(); // 创建一个新的VBox作为顶部容器
+        topContainer.getChildren().add(menuBar); // 首先添加menuBar
+
+        // 创建并配置车位信息显示（即之前setupParkingInfoDisplay的部分）
+        VBox infoBox = new VBox(10);
+        infoBox.setPadding(new Insets(10));
+        totalSpotsLabel = new Label("总车位数: " + totalSpots);
+        availableSpotsLabel = new Label("空闲车位数: " + availableSpots);
+        infoBox.getChildren().addAll(totalSpotsLabel, availableSpotsLabel);
+
+        topContainer.getChildren().add(infoBox); // 然后添加车位信息的显示
+        root.setTop(topContainer); // 最后将整个容器设置为BorderPane的顶部
+        //加载单价
+        FeeManager feeManager = new FeeManager("fee_info.txt");
+        double feePerMinute = feeManager.loadFeePerMinute();
+        ParkingRecord.setFeePerMinute(feePerMinute);
+
+        loadInitialParkingStatus();
+
+        // 默认显示停车场
+        showParkingLotView();
+    }
+
+    private void loadInitialParkingStatus() {
+        parkingRecords = activeParkingManager.loadParkingRecords("");  // Load records; ensure this returns all relevant records
+        int occupiedCount = parkingRecords.size();
+        availableSpots = totalSpots - occupiedCount;  // Update available spots based on active records
+        updateParkingSpotsInfo();
+    }
+
+    private GridPane createParkingGrid() {
+        parkingRecords = activeParkingManager.loadActiveParkingRecords("");  // Load records; ensure this returns all relevant records
+        GridPane parkingGrid = new GridPane();
+        parkingGrid.setPadding(new Insets(10));
+        parkingGrid.setHgap(10);
+        parkingGrid.setVgap(10);
+        System.out.println("Loaded records:");
+        for(ParkingRecord record : parkingRecords) {
+            System.out.println(record);
+        }
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 5; col++) {
+                int spotIndex = row * 5 + col;
+                Button parkingSpot = new Button("空闲");
+                parkingSpot.setPrefSize(100, 50);
+
+                // Set parking spot state based on loaded records
+                int finalCol = col;
+                int finalRow = row;
+                parkingRecords.stream()
+                        .filter(record -> record.getXPosition() == finalCol && record.getYPosition() == finalRow)
+                        .findFirst()
+                        .ifPresent(record -> {
+                            parkingSpot.setText("占用");
+                            parkingSpot.setStyle("-fx-background-color: red; -fx-text-fill: white;");
+                            parkingSpot.setDisable(true);  // Optional: Disable button if spot is occupied
+                        });
+
+                parkingSpot.setOnAction(e -> selectParkingSpot(parkingSpot));
+                parkingGrid.add(parkingSpot, col, row);
+            }
+        }
+        return parkingGrid;
+    }
+
+
+    private VBox createOperationButtons() {
+        VBox box = new VBox(10);
+        box.setPadding(new Insets(20));
+
+        Button parkButton = new Button("停车");
+        Button leaveButton = new Button("出车");
+
+        parkButton.setOnAction(e -> parkCar());
+        leaveButton.setOnAction(e -> leaveCar());
+
+        box.getChildren().addAll(parkButton, leaveButton);
+        return box;
+    }
+
+    private void setupParkingInfoDisplay() {
+        VBox infoBox = new VBox(10);
+        infoBox.setPadding(new Insets(10));
+
+        totalSpotsLabel = new Label("总车位数: " + totalSpots);
+        availableSpotsLabel = new Label("空闲车位数: " + availableSpots);
+
+        infoBox.getChildren().addAll(totalSpotsLabel, availableSpotsLabel);
+        root.setTop(infoBox); // 假设root是BorderPane的实例
+
+        // 将信息框放置在右上角
+        BorderPane.setAlignment(infoBox, Pos.TOP_RIGHT);
+    }
+
+
+    private void selectParkingSpot(Button parkingSpot) {
+        if ("空闲".equals(parkingSpot.getText())) { // 确保选择的是空闲车位
+            if (selectedParkingSpot != null) {
+                // 如果有之前选中的车位，重置其样式
+                selectedParkingSpot.setStyle("");
+            }
+            selectedParkingSpot = parkingSpot; // 记录新选中的车位
+            // 可以用特殊样式标记选中的车位，例如设置边框
+            selectedParkingSpot.setStyle("-fx-border-color: blue; -fx-border-width: 2;");
+        } else {
+            showAlert(Alert.AlertType.WARNING, "该车位已被占用！");
+        }
+    }
+
+
+    private void updateParkingSpotStyle(Button parkingSpot, boolean isSelected) {
+        if ("occupied".equals(parkingSpot.getUserData())) {
+            parkingSpot.setStyle("-fx-background-color: red;"); // 占用车位显示为红色
+        } else {
+            if (isSelected) {
+                // 选中车位时，使用蓝色边框标识，不改变背景色
+                parkingSpot.setStyle("-fx-border-color: blue; -fx-border-width: 2;");
+            } else {
+                // 未选中的空车位，恢复默认样式
+                parkingSpot.setStyle(""); // 清除自定义样式，回到默认样式
+            }
+        }
+    }
+
+    private void updateParkingSpotsInfo() {
+        // 更新空闲车位数的显示
+        availableSpotsLabel.setText("空闲车位数: " + availableSpots);
+        showParkingLotView();
+    }
+
+
+    private void showParkingLotView() {
+        GridPane parkingGrid = createParkingGrid(); // 创建停车场网格布局
+        root.setCenter(parkingGrid); // 将停车场视图设置为界面的中心内容
+    }
+
+    private void parkCar() {
+        if (selectedParkingSpot != null && "空闲".equals(selectedParkingSpot.getText()) && myParkingSpot == null) {
+            // Obtain the position of the selected parking spot
+            int xPosition = GridPane.getColumnIndex(selectedParkingSpot);
+            int yPosition = GridPane.getRowIndex(selectedParkingSpot);
+
+            // Update the parking spot to show it's now occupied by this user
+            selectedParkingSpot.setText("我的");
+            selectedParkingSpot.setStyle("-fx-background-color: red; -fx-text-fill: white;");
+            selectedParkingSpot.setDisable(true);
+
+            // Update global records and parking status
+            myParkingSpot = selectedParkingSpot;
+            availableSpots--;
+            updateParkingSpotsInfo();
+
+            // Record this parking action
+            currentRecord = new ParkingRecord(username, LocalDateTime.now(), xPosition, yPosition);
+            parkingRecords.add(currentRecord);
+            activeParkingManager.saveParkingRecords(parkingRecords); // Assuming this method also refreshes the data
+
+            showAlert(Alert.AlertType.INFORMATION, "停车成功！");
+            showParkingLotView();
+        } else if (myParkingSpot != null) {
+            showAlert(Alert.AlertType.WARNING, "你已经停了一辆车！");
+        } else {
+            showAlert(Alert.AlertType.WARNING, "请选择一个空闲的车位！");
+        }
+    }
+
+
+    private void leaveCar() {
+        if (myParkingSpot != null) {
+            int xPosition = GridPane.getColumnIndex(myParkingSpot);
+            int yPosition = GridPane.getRowIndex(myParkingSpot);
+
+            // Free up the parking spot
+            myParkingSpot.setText("空闲");
+            myParkingSpot.setStyle("");
+            myParkingSpot.setDisable(false);
+
+            // Update available spots and remove parking record
+            availableSpots++;
+            updateParkingSpotsInfo();
+
+            if (currentRecord != null) {
+                System.out.println("出车前：");
+                System.out.println(currentRecord);
+                for(ParkingRecord record : parkingRecords) {
+                    System.out.println(record);
+                }
+
+                parkingRecords.remove(currentRecord);
+                System.out.println("出车后：");
+                System.out.println(currentRecord);
+                for(ParkingRecord record : parkingRecords) {
+                    System.out.println(record);
+                }
+                currentRecord.endParking(LocalDateTime.now());
+                completedParkingManager.addParkingRecords(Arrays.asList(currentRecord));
+                activeParkingManager.saveParkingRecords(parkingRecords);
+                currentRecord = null;
+                showAlert(Alert.AlertType.INFORMATION, "出车成功！");
+            }
+
+            myParkingSpot = null;
+            showParkingLotView();
+        } else {
+            showAlert(Alert.AlertType.WARNING, "您当前没有停车！");
+        }
+    }
+
+
+
+    private void showAlert(Alert.AlertType type, String message) {
+        Alert alert = new Alert(type, message);
+        alert.setHeaderText(null);
+        alert.showAndWait();
+    }
+  
+
+    private void showPersonalInfoView() {
+        // 假设已经有了一个方法getUserDetails返回一个包含用户详情的User对象
+        User user = getUserDetails(username);
+
+        // 创建一个对话框来显示个人信息
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("个人信息");
+        dialog.setHeaderText("查看个人信息");
+
+        // 设置对话框的内容
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("用户名:"), 0, 0);
+        grid.add(new Label(user.getUsername()), 1, 0);
+        grid.add(new Label("密码:"), 0, 1);
+        grid.add(new Label(user.getPassword()), 1, 1); // 显示密码，通常不推荐
+        grid.add(new Label("账号状态:"), 0, 2);
+        grid.add(new Label(user.getStatus()), 1, 2);
+        grid.add(new Label("角色:"), 0, 3);
+        grid.add(new Label(user.getRole()), 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+
+        // 显示对话框
+        dialog.showAndWait();
+    }
+
+    private User getUserDetails(String username) {
+
+        return new CSVManager("users.csv").getUser(username);
+    }
+
+    private void logoutAction() {
+        // 关闭当前窗口
+        Stage stage = (Stage) root.getScene().getWindow();
+        stage.close();
+
+        // 打开登录界面
+        Platform.runLater(() -> {
+            try {
+                new LoginFrame().start(new Stage());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+
+    public static void main(String[] args) {
+        launch(args);
+    }
+}
